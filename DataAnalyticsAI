@@ -1,0 +1,37 @@
+[1mdiff --git a/modules/query_engine/analysis_executor.py b/modules/query_engine/analysis_executor.py[m
+[1mindex dfdc392..5415f31 100644[m
+[1m--- a/modules/query_engine/analysis_executor.py[m
+[1m+++ b/modules/query_engine/analysis_executor.py[m
+[36m@@ -788,6 +788,32 @@[m [mdef execute_analysis([m
+ [m
+         return result[m
+ [m
+[32m+[m[32m        # =========================================[m
+[32m+[m[32m    # COUNT[m
+[32m+[m[32m    # =========================================[m
+[32m+[m
+[32m+[m[32m    if "count" in operations:[m
+[32m+[m
+[32m+[m[32m        total_records = len(df)[m
+[32m+[m
+[32m+[m[32m        result["data"] = pd.DataFrame([[m
+[32m+[m[32m            {[m
+[32m+[m[32m                "Metric": "Total Records",[m
+[32m+[m[32m                "Value": total_records[m
+[32m+[m[32m            }[m
+[32m+[m[32m        ])[m
+[32m+[m
+[32m+[m[32m        result["analysis_type"] = "count"[m
+[32m+[m
+[32m+[m[32m        result["message"] = ([m
+[32m+[m[32m            "Record count generated."[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        return result[m
+[32m+[m
+[32m+[m
+[32m+[m[41m    [m
+[32m+[m
+     # =========================================[m
+     # COMPARISON[m
+     # =========================================[m

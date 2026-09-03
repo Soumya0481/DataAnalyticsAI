@@ -788,6 +788,32 @@ def execute_analysis(
 
         return result
 
+        # =========================================
+    # COUNT
+    # =========================================
+
+    if "count" in operations:
+
+        total_records = len(df)
+
+        result["data"] = pd.DataFrame([
+            {
+                "Metric": "Total Records",
+                "Value": total_records
+            }
+        ])
+
+        result["analysis_type"] = "count"
+
+        result["message"] = (
+            "Record count generated."
+        )
+
+        return result
+
+
+    
+
     # =========================================
     # COMPARISON
     # =========================================

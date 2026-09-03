@@ -132,9 +132,20 @@ def create_analysis_plan(
             {}
         ).get("role") in [
             "categorical",
-            "categorical_numeric"
+            "categorical_numeric",
+            "binary"
         ]
     ]
+
+    # Fallback to schema-level categorical columns
+    # when the grouping column is not among the
+    # top matched columns.
+    if not categorical_columns:
+
+        categorical_columns = schema.get(
+            "categorical_columns",
+            []
+        )
 
     # =========================================
     # DATE COLUMNS

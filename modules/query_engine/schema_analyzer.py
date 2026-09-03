@@ -23,7 +23,14 @@ def _detect_column_role(column_name, series):
     )
 
     if unique_values and unique_values.issubset(
-        {"true", "false", "yes", "no", "0", "1"}
+        {
+            "true",
+            "false",
+            "yes",
+            "no",
+            "0",
+            "1"
+        }
     ):
 
         return "binary"
@@ -86,14 +93,16 @@ def _detect_column_role(column_name, series):
 
     if row_count > 0:
 
-        unique_ratio = unique_count / row_count
+        unique_ratio = (
+            unique_count / row_count
+        )
 
     else:
 
         unique_ratio = 0
 
     # High-cardinality text may represent
-    # identifiers, names, emails, etc.
+    # identifiers, names, URLs, etc.
 
     if unique_ratio > 0.8:
 
@@ -102,7 +111,11 @@ def _detect_column_role(column_name, series):
     return "categorical"
 
 
-def _detect_semantic_tags(column_name, series, role):
+def _detect_semantic_tags(
+    column_name,
+    series,
+    role
+):
     """
     Generate broad semantic tags for a column.
 
@@ -110,7 +123,11 @@ def _detect_semantic_tags(column_name, series, role):
     what a column may represent.
     """
 
-    name = str(column_name).lower().strip()
+    name = (
+        str(column_name)
+        .lower()
+        .strip()
+    )
 
     tags = []
 
@@ -289,7 +306,194 @@ def _detect_semantic_tags(column_name, series, role):
 
         tags.append("indicator")
 
-    return list(dict.fromkeys(tags))
+    return list(
+        dict.fromkeys(tags)
+    )
+
+
+def _infer_value_semantics(series):
+    """
+    Infer broad semantic meaning from actual
+    column values.
+
+    This is useful when column names are generic,
+    unclear, or not descriptive.
+    """
+
+    values = (
+        series
+        .dropna()
+        .astype(str)
+        .str.lower()
+        .str.strip()
+    )
+
+    if values.empty:
+
+        return []
+
+    unique_values = set(
+        values.unique()
+    )
+
+    tags = []
+
+    # =========================================
+    # STATUS
+    # =========================================
+
+    status_values = {
+        "open",
+        "closed",
+        "pending",
+        "completed",
+        "complete",
+        "cancelled",
+        "canceled",
+        "active",
+        "inactive",
+        "approved",
+        "rejected",
+        "failed",
+        "success",
+        "successful",
+        "processing",
+        "in progress",
+        "resolved",
+        "new"
+    }
+
+    status_match_ratio = (
+        len(
+            unique_values
+            & status_values
+        )
+        / max(
+            len(unique_values),
+            1
+        )
+    )
+
+    if (
+        status_match_ratio >= 0.5
+        and len(unique_values) <= 20
+    ):
+
+        tags.append("status")
+
+    # =========================================
+    # GENDER
+    # =========================================
+
+    gender_values = {
+        "male",
+        "female",
+        "m",
+        "f",
+        "man",
+        "woman",
+        "other"
+    }
+
+    if (
+        unique_values
+        and unique_values.issubset(
+            gender_values
+        )
+    ):
+
+        tags.append("gender")
+
+    # =========================================
+    # YES / NO
+    # =========================================
+
+    yes_no_values = {
+        "yes",
+        "no",
+        "true",
+        "false"
+    }
+
+    if (
+        unique_values
+        and unique_values.issubset(
+            yes_no_values
+        )
+    ):
+
+        tags.append("boolean")
+
+    # =========================================
+    # DEPARTMENT
+    # =========================================
+
+    department_values = {
+        "hr",
+        "human resources",
+        "finance",
+        "sales",
+        "marketing",
+        "it",
+        "information technology",
+        "operations",
+        "admin",
+        "administration",
+        "support",
+        "engineering",
+        "management"
+    }
+
+    department_match_ratio = (
+        len(
+            unique_values
+            & department_values
+        )
+        / max(
+            len(unique_values),
+            1
+        )
+    )
+
+    if (
+        department_match_ratio >= 0.5
+        and len(unique_values) <= 30
+    ):
+
+        tags.append("department")
+
+    # =========================================
+    # LOCATION
+    # =========================================
+
+    location_values = {
+        "india",
+        "usa",
+        "uk",
+        "canada",
+        "australia",
+        "delhi",
+        "mumbai",
+        "bangalore",
+        "bengaluru",
+        "hyderabad",
+        "chennai",
+        "pune",
+        "kolkata"
+    }
+
+    if (
+        len(
+            unique_values
+            & location_values
+        ) > 0
+    ):
+
+        tags.append("location")
+
+    return list(
+        dict.fromkeys(tags)
+    )
 
 
 def analyze_schema(df):
@@ -318,7 +522,9 @@ def analyze_schema(df):
 
         details = {
             "name": column_name,
-            "dtype": str(series.dtype),
+            "dtype": str(
+                series.dtype
+            ),
             "missing": int(
                 series.isnull().sum()
             ),
@@ -346,11 +552,24 @@ def analyze_schema(df):
         # SEMANTIC TAGS
         # =========================================
 
-        details["semantic_tags"] = (
+        semantic_tags = (
             _detect_semantic_tags(
                 column_name,
                 series,
                 role
+            )
+        )
+
+        value_semantic_tags = (
+            _infer_value_semantics(
+                series
+            )
+        )
+
+        details["semantic_tags"] = list(
+            dict.fromkeys(
+                semantic_tags
+                + value_semantic_tags
             )
         )
 
@@ -362,7 +581,9 @@ def analyze_schema(df):
 
             schema[
                 "numerical_columns"
-            ].append(column_name)
+            ].append(
+                column_name
+            )
 
         elif role in [
             "categorical",
@@ -372,13 +593,17 @@ def analyze_schema(df):
 
             schema[
                 "categorical_columns"
-            ].append(column_name)
+            ].append(
+                column_name
+            )
 
         elif role == "date":
 
             schema[
                 "date_columns"
-            ].append(column_name)
+            ].append(
+                column_name
+            )
 
         # =========================================
         # SAMPLE VALUES
